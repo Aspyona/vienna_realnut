@@ -1,12 +1,57 @@
 import pandas as pd
+import os
+import plotly.graph_objects as go
+import plotly.io as pio
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
-df = pd.read_csv('/home/pf/autobefreit/REALNUT2018OGD.csv')
+df = pd.read_csv('/home/pf/vienna_realnut/REALNUT2018OGD.csv')
 
 list(df)
 
 df.loc[df.NUTZUNG_LEVEL2 == 'weitere verkehrliche Nutzungen', 'NUTZUNG_LEVEL2'] = df.loc[df.NUTZUNG_LEVEL2 == 'weitere verkehrliche Nutzungen', 'NUTZUNG_LEVEL3']
 df.loc[df.NUTZUNG_LEVEL2 == 'Straßenraum', 'NUTZUNG_LEVEL2'] = 'Straßenraum & Parkplätze'
 df.loc[df.NUTZUNG_LEVEL2 == 'Parkplätze u. Parkhäuser', 'NUTZUNG_LEVEL2'] = 'Straßenraum & Parkplätze'
+
+
+#%%
+
+labels = df.NUTZUNG_LEVEL2.unique()
+for district in np.arange(1, 22):
+    os.system('mkdir ' + str(district))
+    sizes = []
+    labels_used = []
+    is_district = df.BEZ == district
+    district_area = df[is_district].FLAECHE.sum()
+    others_idx = False
+
+    for i, label in enumerate(labels):
+        usage = df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
+        if usage / district_area < 0.01:
+            if others_idx is False:
+                print(label, 'first')
+                labels_used.append('Sonstiges')
+                sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
+                others_idx = i
+            else:
+                print(label)
+                sizes[others_idx] += df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
+        else:
+            labels_used.append(label)
+            sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
+
+    explode = list(0 for label in labels_used)
+    street_idx = labels_used.index('Straßenraum & Parkplätze')
+    explode[street_idx] = 0.1
+    fig = go.Figure(data=[go.Pie(labels=labels_used, values=sizes, pull=explode)])
+
+    fig.update_layout(legend=dict(x=0, y=-1, traceorder="normal", xanchor='left', yanchor='bottom'))
+    fig.update_layout(autosize=False, width=600, height=600,)
+    pio.write_html(fig, file=str(district) + '/index.html', auto_open=False)
+    fig.show()
+
+#%%
 
 
 df.NUTZUNG_LEVEL1.value_counts()
@@ -26,50 +71,6 @@ for i in range(21):
     print(i + 1, frac)
 
 #%%
-
-labels = df.NUTZUNG_LEVEL2.unique()
-sizes = []
-labels_used = []
-district = 1
-is_district = df.BEZ == district
-# is_district = df.BEZ > 0
-district_area = df[is_district].FLAECHE.sum()
-
-others_idx = False
-for i, label in enumerate(labels):
-    usage = df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
-    if usage / district_area < 0.01:
-        if others_idx is False:
-            print(label, 'first')
-            labels_used.append('Sonstiges')
-            sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
-            others_idx = i
-        else:
-            print(label)
-            sizes[others_idx] += df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
-    else:
-        labels_used.append(label)
-        sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
-
-#%%
-import plotly.graph_objects as go
-import plotly.io as pio
-explode = list(0 for label in labels_used)
-street_idx = labels_used.index('Straßenraum & Parkplätze')
-explode[street_idx] = 0.1
-
-# pull is given as a fraction of the pie radius
-fig = go.Figure(data=[go.Pie(labels=labels_used, values=sizes, pull=explode)])
-
-fig.update_layout(legend=dict(x=0, y=-1, traceorder="normal", xanchor='left', yanchor='bottom'))
-fig.update_layout(autosize=False, width=600, height=600,)
-pio.write_html(fig, file='index.html', auto_open=True)
-fig.show()
-
-#%%
-
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 mpl.rcParams['font.size'] = 16.0
 
 # Pie chart, where the slices will be ordered and plotted counter-clockwise:
