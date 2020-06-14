@@ -2,24 +2,35 @@ import pandas as pd
 import os
 import plotly.graph_objects as go
 import plotly.io as pio
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import numpy as np
 
 df = pd.read_csv('/home/pf/vienna_realnut/REALNUT2018OGD.csv')
 
-list(df)
-
 df.loc[df.NUTZUNG_LEVEL2 == 'weitere verkehrliche Nutzungen', 'NUTZUNG_LEVEL2'] = df.loc[df.NUTZUNG_LEVEL2 == 'weitere verkehrliche Nutzungen', 'NUTZUNG_LEVEL3']
-df.loc[df.NUTZUNG_LEVEL2 == 'Straßenraum', 'NUTZUNG_LEVEL2'] = 'Straßenraum & Parkplätze'
-df.loc[df.NUTZUNG_LEVEL2 == 'Parkplätze u. Parkhäuser', 'NUTZUNG_LEVEL2'] = 'Straßenraum & Parkplätze'
+df.loc[df.NUTZUNG_LEVEL2 == 'Straßenraum', 'NUTZUNG_LEVEL2'] = 'Straßenraum u. Parkplätze'
+df.loc[df.NUTZUNG_LEVEL2 == 'Parkplätze u. Parkhäuser', 'NUTZUNG_LEVEL2'] = 'Straßenraum u. Parkplätze'
 
 
 #%%
 
+label_colors = {'Wohn- u. Mischnutzung (Schwerpunkt Wohnen)': '#EF553B',
+                'Naturraum': '#FECB52',
+                'Landwirtschaft': 'rgb(17, 119, 51)',
+                'Transport und Logistik inkl. Lager': '#B6E880',
+                'Industrie- und Gewerbenutzung': '#FF97FF',
+                'Gewässer': '#19D3F3',
+                'Geschäfts,- Kern- und Mischnutzung (Schwerpunkt betriebl. Tätigkeit)': '#00CC96',
+                'Erholungs- u. Freizeiteinrichtungen': '#FFA15A',
+                'Technische Infrastruktur/Kunstbauten/Sondernutzung': 'rgb(153, 153, 51)',
+                'Straßenraum u. Parkplätze': '#636EFA',
+                'soziale Infrastruktur': '#AB63FA',
+                'Bahnhöfe und Bahnanlagen': '#FF6692',
+                'Sonstiges': 'rgb(51, 34, 136)'}
 labels = df.NUTZUNG_LEVEL2.unique()
 for district in np.arange(1, 24):
-    os.system('mkdir -p' + str(district))
+    os.system('mkdir -p ' + str(district))
     sizes = []
     labels_used = []
     is_district = df.BEZ == district
@@ -39,20 +50,19 @@ for district in np.arange(1, 24):
                 sizes[others_idx] += df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
         else:
             labels_used.append(label)
-            sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
+            sizes.append(int(round(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())))
 
     explode = list(0 for label in labels_used)
-    street_idx = labels_used.index('Straßenraum & Parkplätze')
+    street_idx = labels_used.index('Straßenraum u. Parkplätze')
     explode[street_idx] = 0.1
-    fig = go.Figure(data=[go.Pie(labels=labels_used, values=sizes, pull=explode)])
-
+    fig = go.Figure(data=[go.Pie(labels=labels_used, values=sizes, pull=explode, marker_colors=[label_colors[i] for i in labels_used])])
+    fig.update_traces(hoverinfo='label+text', text=[f'{size:,} Quadratmeter' for size in sizes], textinfo='percent', textfont_size=14)
     fig.update_layout(legend=dict(x=0, y=-1, traceorder="normal", xanchor='left', yanchor='bottom'))
     fig.update_layout(autosize=True)
-    pio.write_html(fig, file=str(district) + '/index.html', auto_open=False, include_plotlyjs="cdn")
+    pio.write_html(fig, file=str(district) + '/index.html', auto_open=False, include_plotlyjs="cdn")  # , include_mathjax="cdn")
     fig.show()
 
 #%%
-
 
 df.NUTZUNG_LEVEL1.value_counts()
 df.NUTZUNG_LEVEL2.value_counts()
