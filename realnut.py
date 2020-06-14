@@ -18,8 +18,8 @@ df.loc[df.NUTZUNG_LEVEL2 == 'Parkplätze u. Parkhäuser', 'NUTZUNG_LEVEL2'] = 'S
 #%%
 
 labels = df.NUTZUNG_LEVEL2.unique()
-for district in np.arange(1, 22):
-    os.system('mkdir ' + str(district))
+for district in np.arange(1, 24):
+    os.system('mkdir -p' + str(district))
     sizes = []
     labels_used = []
     is_district = df.BEZ == district
@@ -47,8 +47,8 @@ for district in np.arange(1, 22):
     fig = go.Figure(data=[go.Pie(labels=labels_used, values=sizes, pull=explode)])
 
     fig.update_layout(legend=dict(x=0, y=-1, traceorder="normal", xanchor='left', yanchor='bottom'))
-    fig.update_layout(autosize=False, width=600, height=600,)
-    pio.write_html(fig, file=str(district) + '/index.html', auto_open=False)
+    fig.update_layout(autosize=True)
+    pio.write_html(fig, file=str(district) + '/index.html', auto_open=False, include_plotlyjs="cdn")
     fig.show()
 
 #%%
