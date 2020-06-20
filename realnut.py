@@ -43,11 +43,11 @@ for district in np.arange(1, 24):
             if others_idx is False:
                 print(label, 'first')
                 labels_used.append('Sonstiges')
-                sizes.append(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())
+                sizes.append(int(round(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())))
                 others_idx = i
             else:
                 print(label)
-                sizes[others_idx] += df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()
+                sizes[others_idx] += int(round(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum()))
         else:
             labels_used.append(label)
             sizes.append(int(round(df[(df.NUTZUNG_LEVEL2 == label) & is_district].FLAECHE.sum())))
